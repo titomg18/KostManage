@@ -734,7 +734,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="{{ route('penyewas.index') }}" class="nav-link">
                         <i class="bi bi-people"></i>
                         <span>Penyewa</span>
                         <span class="badge bg-success ms-auto">8</span>

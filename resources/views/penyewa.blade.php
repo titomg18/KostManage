@@ -936,6 +936,7 @@
                                     <th>No. KTP</th>
                                     <th>No. HP</th>
                                     <th>Email</th>
+                                    <th>Kamar</th>
                                     <th>Status</th>
                                     <th>Alamat</th>
                                     <th>Aksi</th>
@@ -953,6 +954,29 @@
                                     <td>{{ $penyewa->no_ktp }}</td>
                                     <td>{{ $penyewa->no_hp }}</td>
                                     <td>{{ $penyewa->email ?? '-' }}</td>
+                                    <td>
+                                        @if($penyewa->room)
+                                            <div class="fw-bold">{{ $penyewa->room->nomor_kamar }}</div>
+                                            <small class="text-muted">{{ $penyewa->room->tipe_kamar }}</small>
+                                            <br>
+                                            <small>Rp {{ number_format($penyewa->room->harga_sewa, 0, ',', '.') }}</small>
+                                            <div class="mt-1">
+                                                <button class="btn btn-sm btn-outline-danger remove-room-btn" 
+                                                        onclick="removeRoomAssignment({{ $penyewa->id }}, '{{ $penyewa->nama }}')">
+                                                    <i class="bi bi-house-x"></i> Kosongkan
+                                                </button>
+                                            </div>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                            <div class="mt-1">
+                                                <button class="btn btn-sm btn-outline-primary assign-room-btn" 
+                                                        data-id="{{ $penyewa->id }}"
+                                                        data-nama="{{ $penyewa->nama }}">
+                                                    <i class="bi bi-house-add"></i> Assign Kamar
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </td>
                                     <td>
                                         <div class="dropdown">
                                             <button class="btn btn-sm dropdown-toggle status-badge 
@@ -1025,7 +1049,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-4">
+                                    <td colspan="8" class="text-center py-4">
                                         <div class="text-muted">
                                             <i class="bi bi-people display-4"></i>
                                             <p class="mt-3">Belum ada data penyewa</p>
@@ -1102,46 +1126,97 @@
                 <form action="{{ route('penyewas.store') }}" method="POST" id="addPenyewaForm">
                     @csrf
                     <div class="modal-body">
+                        @if ($errors->any())
+                        <div class="alert alert-danger alert-custom fade show mb-3" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Terjadi Kesalahan:</strong>
+                            <ul class="mb-0 mt-2">
+                                @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        @endif
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">Nama Lengkap *</label>
-                                <input type="text" name="nama" class="form-control" required>
+                                <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror" value="{{ old('nama') }}" required>
+                                @error('nama')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">No. KTP *</label>
-                                <input type="text" name="no_ktp" class="form-control" required maxlength="16">
+                                <input type="text" name="no_ktp" class="form-control @error('no_ktp') is-invalid @enderror" value="{{ old('no_ktp') }}" required maxlength="16">
+                                @error('no_ktp')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">No. HP *</label>
-                                <input type="text" name="no_hp" class="form-control" required>
+                                <input type="text" name="no_hp" class="form-control @error('no_hp') is-invalid @enderror" value="{{ old('no_hp') }}" required>
+                                @error('no_hp')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Email</label>
-                                <input type="email" name="email" class="form-control">
+                                <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}">
+                                @error('email')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Pekerjaan</label>
-                                <input type="text" name="pekerjaan" class="form-control" placeholder="Contoh: Karyawan Swasta">
+                                <input type="text" name="pekerjaan" class="form-control" value="{{ old('pekerjaan') }}" placeholder="Contoh: Karyawan Swasta">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Status *</label>
-                                <select name="status" class="form-select" required>
-                                    <option value="aktif">Aktif</option>
-                                    <option value="nonaktif">Nonaktif</option>
-                                    <option value="menunggak">Menunggak</option>
+                                <select name="status" class="form-select @error('status') is-invalid @enderror" required>
+                                    <option value="">Pilih Status</option>
+                                    <option value="aktif" {{ old('status') == 'aktif' ? 'selected' : '' }}>Aktif</option>
+                                    <option value="nonaktif" {{ old('status') == 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+                                    <option value="menunggak" {{ old('status') == 'menunggak' ? 'selected' : '' }}>Menunggak</option>
                                 </select>
+                                @error('status')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Kamar</label>
+                                <select name="room_id" class="form-select @error('room_id') is-invalid @enderror">
+                                    <option value="">Pilih Kamar (Opsional)</option>
+                                    @foreach($kamarKosong as $kamar)
+                                    <option value="{{ $kamar->id }}" {{ old('room_id') == $kamar->id ? 'selected' : '' }}>
+                                        {{ $kamar->nomor_kamar }} - {{ $kamar->tipe_kamar }} (Rp {{ number_format($kamar->harga_sewa, 0, ',', '.') }})
+                                    </option>
+                                    @endforeach
+                                </select>
+                                @error('room_id')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Tanggal Masuk</label>
-                                <input type="date" name="tanggal_masuk" class="form-control">
+                                <input type="date" name="tanggal_masuk" class="form-control @error('tanggal_masuk') is-invalid @enderror" value="{{ old('tanggal_masuk') }}">
+                                @error('tanggal_masuk')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Tanggal Keluar</label>
-                                <input type="date" name="tanggal_keluar" class="form-control">
+                                <input type="date" name="tanggal_keluar" class="form-control @error('tanggal_keluar') is-invalid @enderror" value="{{ old('tanggal_keluar') }}">
+                                @error('tanggal_keluar')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Alamat *</label>
-                                <textarea name="alamat" class="form-control" rows="3" required placeholder="Alamat lengkap penyewa"></textarea>
+                                <textarea name="alamat" class="form-control @error('alamat') is-invalid @enderror" rows="3" required placeholder="Alamat lengkap penyewa">{{ old('alamat') }}</textarea>
+                                @error('alamat')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                     </div>
@@ -1254,6 +1329,10 @@
                                     <p class="fw-bold" id="detail_pekerjaan">-</p>
                                 </div>
                                 <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Kamar</label>
+                                    <p class="fw-bold" id="detail_kamar">-</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
                                     <label class="form-label text-muted">Tanggal Masuk</label>
                                     <p class="fw-bold" id="detail_tanggal_masuk">-</p>
                                 </div>
@@ -1297,6 +1376,36 @@
                         <button type="submit" class="btn btn-danger">Hapus</button>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Assign Room Modal -->
+    <div class="modal fade" id="assignRoomModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tetapkan Kamar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="assignRoomForm">
+                    @csrf
+                    <div class="modal-body">
+                        <p>Menetapkan kamar untuk: <strong id="assignPenyewaName"></strong></p>
+                        <input type="hidden" id="assignPenyewaId">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Pilih Kamar</label>
+                            <select id="assignRoomSelect" class="form-select" required>
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Tetapkan</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1381,7 +1490,7 @@
                 
                 const penyewaId = this.getAttribute('data-id');
                 const newStatus = this.getAttribute('data-status');
-                const button = $(this).closest('.dropdown').find('.status-badge');
+                const button = this.closest('.dropdown').querySelector('.status-badge');
                 
                 // Show confirmation for menunggak status
                 if (newStatus === 'menunggak') {
@@ -1402,25 +1511,24 @@
                 .then(data => {
                     if (data.success) {
                         // Update button appearance
-                        button.removeClass('btn-success btn-secondary btn-danger');
+                        button.classList.remove('btn-success', 'btn-secondary', 'btn-danger');
                         
                         if (newStatus === 'aktif') {
-                            button.addClass('btn-success');
+                            button.classList.add('btn-success');
                         } else if (newStatus === 'nonaktif') {
-                            button.addClass('btn-secondary');
+                            button.classList.add('btn-secondary');
                         } else {
-                            button.addClass('btn-danger');
+                            button.classList.add('btn-danger');
                         }
                         
-                        button.text(data.new_status.charAt(0).toUpperCase() + data.new_status.slice(1));
+                        button.textContent = data.new_status.charAt(0).toUpperCase() + data.new_status.slice(1);
+                        
+                        // Update data-status attribute on table row
+                        const row = button.closest('tr');
+                        row.setAttribute('data-status', newStatus);
                         
                         // Show success message
                         showAlert('success', data.message);
-                        
-                        // Reload page after 1 second
-                        setTimeout(() => {
-                            location.reload();
-                        }, 1000);
                     }
                 })
                 .catch(error => {
@@ -1457,10 +1565,10 @@
         document.querySelectorAll('.view-penyewa').forEach(button => {
             button.addEventListener('click', function() {
                 const penyewaId = this.getAttribute('data-id');
-                
-                // Get data from the row
                 const row = this.closest('tr');
-                const nama = row.querySelector('[data-nama]')?.getAttribute('data-nama') || this.getAttribute('data-nama');
+                
+                // Get all data from the row
+                const nama = this.getAttribute('data-nama');
                 const no_ktp = this.getAttribute('data-no_ktp');
                 const no_hp = this.getAttribute('data-no_hp');
                 const email = this.getAttribute('data-email') || '-';
@@ -1470,6 +1578,11 @@
                 const tanggal_masuk = this.getAttribute('data-tanggal_masuk') || '-';
                 const tanggal_keluar = this.getAttribute('data-tanggal_keluar') || '-';
                 
+                // Get room info if exists
+                const roomInfo = row.querySelector('.fw-bold') ? 
+                    row.querySelector('.fw-bold').textContent + ' (' + row.querySelector('.text-muted').textContent + ')' : 
+                    '-';
+                
                 // Update modal content
                 document.getElementById('detail_avatar').textContent = nama.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
                 document.getElementById('detail_nama').textContent = nama;
@@ -1477,6 +1590,7 @@
                 document.getElementById('detail_no_hp').textContent = no_hp;
                 document.getElementById('detail_email').textContent = email;
                 document.getElementById('detail_pekerjaan').textContent = pekerjaan;
+                document.getElementById('detail_kamar').textContent = roomInfo;
                 document.getElementById('detail_alamat').textContent = alamat;
                 document.getElementById('detail_tanggal_masuk').textContent = tanggal_masuk;
                 document.getElementById('detail_tanggal_keluar').textContent = tanggal_keluar;
@@ -1488,8 +1602,9 @@
                 
                 // Set edit button functionality
                 document.getElementById('editFromDetail').onclick = function() {
+                    bootstrap.Modal.getInstance(document.getElementById('detailPenyewaModal')).hide();
+                    
                     const editModal = new bootstrap.Modal(document.getElementById('editPenyewaModal'));
-                    editModal.show();
                     
                     // Pre-fill edit form
                     const editForm = document.getElementById('editPenyewaForm');
@@ -1503,6 +1618,8 @@
                     document.getElementById('edit_alamat').value = alamat;
                     document.getElementById('edit_tanggal_masuk').value = tanggal_masuk !== '-' ? tanggal_masuk : '';
                     document.getElementById('edit_tanggal_keluar').value = tanggal_keluar !== '-' ? tanggal_keluar : '';
+                    
+                    editModal.show();
                 };
                 
                 // Show modal
@@ -1524,6 +1641,105 @@
                 deleteModal.show();
             });
         });
+        
+        // Assign room functionality
+        document.querySelectorAll('.assign-room-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const penyewaId = this.getAttribute('data-id');
+                const penyewaNama = this.getAttribute('data-nama');
+                
+                // Show room selection modal
+                const modal = new bootstrap.Modal(document.getElementById('assignRoomModal'));
+                modal.show();
+                
+                // Set penyewa info
+                document.getElementById('assignPenyewaName').textContent = penyewaNama;
+                document.getElementById('assignPenyewaId').value = penyewaId;
+                
+                // Load available rooms
+                loadAvailableRooms();
+            });
+        });
+        
+        // Load available rooms for assignment
+        function loadAvailableRooms() {
+            // PERBAIKAN DI SINI: ganti "rooms.available" menjadi "penyewas.available-rooms"
+            fetch('{{ route("penyewas.available-rooms") }}')
+                .then(response => response.json())
+                .then(rooms => {
+                    const select = document.getElementById('assignRoomSelect');
+                    select.innerHTML = '<option value="">Pilih Kamar</option>';
+                    
+                    rooms.forEach(room => {
+                        const option = document.createElement('option');
+                        option.value = room.id;
+                        option.textContent = room.nomor_kamar + ' - ' + room.tipe_kamar + ' (Rp ' + room.harga_sewa.toLocaleString('id-ID') + ')';
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading rooms:', error);
+                    showAlert('error', 'Gagal memuat daftar kamar');
+                });
+        }
+        
+        // Assign room form submission
+        document.getElementById('assignRoomForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const penyewaId = document.getElementById('assignPenyewaId').value;
+            const roomId = document.getElementById('assignRoomSelect').value;
+            
+            if (!roomId) {
+                alert('Silakan pilih kamar!');
+                return;
+            }
+            
+            fetch(`/penyewas/${penyewaId}/assign-room`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ room_id: roomId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', data.message);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showAlert('error', data.message);
+                }
+            })
+            .catch(error => {
+                showAlert('error', 'Gagal menetapkan kamar');
+            });
+        });
+        
+        // Remove room assignment
+        function removeRoomAssignment(penyewaId, penyewaNama) {
+            if (confirm(`Kosongkan kamar dari ${penyewaNama}?`)) {
+                fetch(`/penyewas/${penyewaId}/remove-room`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ _method: 'DELETE' })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', data.message);
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                })
+                .catch(error => {
+                    showAlert('error', 'Gagal mengosongkan kamar');
+                });
+            }
+        }
         
         // Add hover effect to action cards
         const actionCards = document.querySelectorAll('.action-card');

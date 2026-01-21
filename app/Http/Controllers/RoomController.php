@@ -121,4 +121,31 @@ class RoomController extends Controller
         return redirect()->route('rooms.index')
             ->with('success', 'Kamar berhasil dihapus!');
     }
+
+    // Tambahkan method untuk mengosongkan kamar
+public function vacateRoom(Room $room)
+{
+    if ($room->user_id !== Auth::id()) {
+        abort(403);
+    }
+
+    if ($room->status != 'terisi') {
+        return redirect()->back()
+            ->with('error', 'Kamar sudah kosong!');
+    }
+
+    // Update penyewa status menjadi nonaktif jika ada
+    if ($room->penyewa) {
+        $room->penyewa->update(['status' => 'nonaktif']);
+    }
+
+    // Kosongkan kamar
+    $room->update([
+        'penyewa_id' => null,
+        'status' => 'kosong'
+    ]);
+
+    return redirect()->back()
+        ->with('success', 'Kamar berhasil dikosongkan!');
+}
 }

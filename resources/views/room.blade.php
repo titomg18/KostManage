@@ -742,7 +742,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="{{ route('penyewas.index') }}" class="nav-link">
                         <i class="bi bi-people"></i>
                         <span>Penyewa</span>
                         <span class="badge bg-success ms-auto">0</span>
@@ -971,6 +971,7 @@
                                     <th>Tipe Kamar</th>
                                     <th>Harga Sewa</th>
                                     <th>Status</th>
+                                    <th>Penyewa</th>
                                     <th>Fasilitas</th>
                                     <th>Luas</th>
                                     <th>Lantai</th>
@@ -991,6 +992,22 @@
                                         <span class="badge badge-status badge-{{ $room->status }}">
                                             {{ ucfirst($room->status) }}
                                         </span>
+                                    </td>
+                                    <td>
+                                        @if($room->penyewa)
+                                            <div class="fw-bold">{{ $room->penyewa->nama }}</div>
+                                            <small class="text-muted">{{ $room->penyewa->no_hp }}</small>
+                                            <div class="mt-1">
+                                                <button class="btn btn-sm btn-outline-danger btn-sm vacate-room" 
+                                                        data-id="{{ $room->id }}"
+                                                        data-nama="{{ $room->penyewa->nama }}"
+                                                        title="Kosongkan Kamar">
+                                                    <i class="bi bi-house-x"></i>
+                                                </button>
+                                            </div>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
                                     </td>
                                     <td>
                                         @if($room->fasilitas)
@@ -1026,7 +1043,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-4">
+                                    <td colspan="9" class="text-center py-4">
                                         <div class="text-muted">
                                             <i class="bi bi-door-closed display-4"></i>
                                             <p class="mt-3">Belum ada data kamar</p>
@@ -1356,6 +1373,35 @@
             });
         });
         
+        // Vacate room functionality
+        document.querySelectorAll('.vacate-room').forEach(button => {
+            button.addEventListener('click', function() {
+                const roomId = this.getAttribute('data-id');
+                const penyewaNama = this.getAttribute('data-nama');
+                
+                if (confirm(`Kosongkan kamar dari ${penyewaNama}?`)) {
+                    fetch(`/rooms/${roomId}/vacate`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ _method: 'DELETE' })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showAlert('success', data.message);
+                            setTimeout(() => location.reload(), 1000);
+                        }
+                    })
+                    .catch(error => {
+                        showAlert('error', 'Gagal mengosongkan kamar');
+                    });
+                }
+            });
+        });
+        
         // Add hover effect to action cards
         const actionCards = document.querySelectorAll('.action-card');
         actionCards.forEach(card => {
@@ -1427,6 +1473,26 @@
                     }
                 });
             }
+        }
+        
+        // Show alert function
+        function showAlert(type, message) {
+            const alert = `
+                <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', alert);
+            
+            setTimeout(() => {
+                const alertElement = document.querySelector('.alert.position-fixed');
+                if (alertElement) {
+                    alertElement.remove();
+                }
+            }, 5000);
         }
         
         // Auto dismiss alerts after 5 seconds

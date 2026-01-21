@@ -30,9 +30,33 @@ class Penyewa extends Model
         return $this->belongsTo(User::class);
     }
 
-    // Relasi ke kamar (jika nanti ada hubungan)
-    // public function room()
-    // {
-    //     return $this->belongsTo(Room::class);
-    // }
+    // Relasi ke kamar (satu penyewa bisa menempati satu kamar)
+    public function room()
+    {
+        return $this->hasOne(Room::class, 'penyewa_id');
+    }
+
+    // Method untuk memeriksa apakah penyewa memiliki kamar
+    public function hasRoom()
+    {
+        return $this->room()->exists();
+    }
+
+    // Method untuk mendapatkan nomor kamar yang ditempati
+    public function getNomorKamarAttribute()
+    {
+        return $this->room ? $this->room->nomor_kamar : null;
+    }
+
+    // Method untuk mendapatkan tipe kamar yang ditempati
+    public function getTipeKamarAttribute()
+    {
+        return $this->room ? $this->room->tipe_kamar : null;
+    }
+
+    // Method untuk mendapatkan harga sewa kamar
+    public function getHargaSewaAttribute()
+    {
+        return $this->room ? $this->room->harga_sewa : null;
+    }
 }
