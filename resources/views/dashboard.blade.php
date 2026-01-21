@@ -721,13 +721,13 @@
             
             <nav class="sidebar-menu">
                 <div class="nav-item">
-                    <a href="#" class="nav-link active">
+                    <a href="{{ route('dashboard') }}" class="nav-link active">
                         <i class="bi bi-house"></i>
                         <span>Dashboard</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="{{ route('rooms.index') }}" class="nav-link">
                         <i class="bi bi-door-closed"></i>
                         <span>Kamar</span>
                         <span class="badge bg-primary ms-auto" style="background: linear-gradient(135deg, var(--primary), var(--secondary))!important;">12</span>

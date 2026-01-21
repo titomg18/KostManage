@@ -2,24 +2,33 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\RoomController;
 
 // Public routes
-Route::get('/login', [AuthController::class, 'login'])->name('login');
-Route::post('/login', [AuthController::class, 'loginProcess'])->name('login.process');
-
-Route::get('/register', [AuthController::class, 'register'])->name('register');
-Route::post('/register', [AuthController::class, 'registerProcess'])->name('register.process');
-
-// Protected routes (require authentication)
-Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');  // ✅ Perbaikan: dari 'dashboard.index' ke 'dashboard'
-    })->name('dashboard');
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'login'])->name('login');
+    Route::post('/login', [AuthController::class, 'loginProcess']);
     
+    Route::get('/register', [AuthController::class, 'register'])->name('register');
+    Route::post('/register', [AuthController::class, 'registerProcess']);
+});
+
+// Protected routes
+Route::middleware('auth')->group(function () {
+    // Dashboard dengan controller
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Rooms resource
+    Route::resource('rooms', RoomController::class);
+    
+    // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
-// Optional: Redirect root to dashboard if logged in, else to login
+// Redirect root
 Route::get('/', function () {
-    return auth()->check() ? redirect('/dashboard') : redirect('/login');
+    return auth()->check() 
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
 });
