@@ -749,7 +749,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="{{ route('payments.index') }}" class="nav-link">
                         <i class="bi bi-cash-coin"></i>
                         <span>Pembayaran</span>
                     </a>

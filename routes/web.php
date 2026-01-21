@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\PenyewaController;
+use App\Http\Controllers\PaymentController;
 
 // Public routes
 Route::middleware('guest')->group(function () {
@@ -31,6 +32,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/penyewas/{penyewa}/assign-room', [PenyewaController::class, 'assignRoom'])->name('penyewas.assign-room');
     Route::post('/penyewas/{penyewa}/remove-room', [PenyewaController::class, 'removeRoom'])->name('penyewas.remove-room');
     Route::get('/penyewas/available-rooms', [PenyewaController::class, 'getAvailableRooms'])->name('penyewas.available-rooms');
+    
+    // Payments
+    Route::resource('payments', PaymentController::class);
+    // Payments - Edit data for modal
+    Route::get('/payments/{payment}/edit-data', [PaymentController::class, 'editData'])->name('payments.edit-data');
     
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
