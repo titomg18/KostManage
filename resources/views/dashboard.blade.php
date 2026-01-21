@@ -730,14 +730,16 @@
                     <a href="{{ route('rooms.index') }}" class="nav-link">
                         <i class="bi bi-door-closed"></i>
                         <span>Kamar</span>
-                        <span class="badge bg-primary ms-auto" style="background: linear-gradient(135deg, var(--primary), var(--secondary))!important;">12</span>
+                        <span class="badge bg-primary ms-auto" style="background: linear-gradient(135deg, var(--primary), var(--secondary))!important;">
+                            {{ $totalRooms ?? 0 }}
+                        </span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('penyewas.index') }}" class="nav-link">
                         <i class="bi bi-people"></i>
                         <span>Penyewa</span>
-                        <span class="badge bg-success ms-auto">8</span>
+                        <span class="badge bg-success ms-auto">{{ $aktifPenyewa ?? 0 }}</span>
                     </a>
                 </div>
                 <div class="nav-item">
@@ -747,7 +749,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="{{ route('laporan.index') }}" class="nav-link">
                         <i class="bi bi-file-earmark-text"></i>
                         <span>Laporan</span>
                     </a>
@@ -769,11 +771,27 @@
             <div class="sidebar-footer">
                 <div class="user-profile">
                     <div class="user-avatar">
-                        AK
+                        @if(auth()->check())
+                            {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+                        @else
+                            AK
+                        @endif
                     </div>
                     <div>
-                        <div class="fw-bold">Admin Kost</div>
-                        <small class="text-muted">admin@kostmanage.com</small>
+                        <div class="fw-bold">
+                            @if(auth()->check())
+                                {{ auth()->user()->name }}
+                            @else
+                                Admin Kost
+                            @endif
+                        </div>
+                        <small class="text-muted">
+                            @if(auth()->check())
+                                {{ auth()->user()->email }}
+                            @else
+                                admin@kostmanage.com
+                            @endif
+                        </small>
                     </div>
                 </div>
             </div>
@@ -795,22 +813,38 @@
                     </div>
                     <div class="date-display d-none d-lg-flex">
                         <i class="bi bi-calendar3"></i>
-                        <span id="currentDate">Senin, 5 November 2023</span>
+                        <span id="currentDate">{{ now()->translatedFormat('l, d F Y') }}</span>
                     </div>
                 </div>
                 
                 <div class="navbar-right">
                     <div class="notification-badge">
                         <i class="bi bi-bell"></i>
-                        <span class="badge-count">3</span>
+                        <span class="badge-count">{{ $pendingPayments ?? 3 }}</span>
                     </div>
                     <div class="user-profile dropdown-toggle" data-bs-toggle="dropdown">
                         <div class="user-avatar">
-                            AK
+                            @if(auth()->check())
+                                {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+                            @else
+                                AK
+                            @endif
                         </div>
                         <div class="d-none d-md-block">
-                            <div class="fw-bold">Admin Kost</div>
-                            <small class="text-muted">Admin</small>
+                            <div class="fw-bold">
+                                @if(auth()->check())
+                                    {{ auth()->user()->name }}
+                                @else
+                                    Admin Kost
+                                @endif
+                            </div>
+                            <small class="text-muted">
+                                @if(auth()->check())
+                                    {{ ucfirst(auth()->user()->role) }}
+                                @else
+                                    Admin
+                                @endif
+                            </small>
                         </div>
                         <i class="bi bi-chevron-down d-none d-md-block"></i>
                     </div>
@@ -819,9 +853,12 @@
                         <a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i> Pengaturan</a>
                         <a class="dropdown-item" href="#"><i class="bi bi-shield-check me-2"></i> Keamanan</a>
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item text-danger" href="#">
-                            <i class="bi bi-box-arrow-right me-2"></i> Logout
-                        </a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class="bi bi-box-arrow-right me-2"></i> Logout
+                            </button>
+                        </form>
                     </div>
                 </div>
             </nav>
@@ -841,16 +878,16 @@
                             <div class="stat-icon icon-kamar">
                                 <i class="bi bi-door-closed"></i>
                             </div>
-                            <div class="stat-trend trend-up">
-                                <i class="bi bi-arrow-up"></i>
-                                2 baru
+                            <div class="stat-trend {{ ($newPenyewaThisMonth ?? 0) > 0 ? 'trend-up' : 'trend-down' }}">
+                                <i class="bi bi-arrow-{{ ($newPenyewaThisMonth ?? 0) > 0 ? 'up' : 'down' }}"></i>
+                                {{ $newPenyewaThisMonth ?? 2 }} baru
                             </div>
                         </div>
-                        <div class="stat-value">12</div>
+                        <div class="stat-value">{{ $totalRooms ?? 12 }}</div>
                         <div class="stat-label">Total Kamar</div>
                         <div class="stat-footer">
                             <i class="bi bi-info-circle"></i>
-                            <span>2 kamar baru bulan ini</span>
+                            <span>{{ $occupiedRooms ?? 8 }} terisi, {{ $vacantRooms ?? 4 }} kosong</span>
                         </div>
                     </div>
                     
@@ -859,16 +896,16 @@
                             <div class="stat-icon icon-penyewa">
                                 <i class="bi bi-people-fill"></i>
                             </div>
-                            <div class="stat-trend trend-up">
-                                <i class="bi bi-arrow-up"></i>
-                                80%
+                            <div class="stat-trend {{ ($aktifPenyewa ?? 0) > 0 ? 'trend-up' : 'trend-down' }}">
+                                <i class="bi bi-arrow-{{ ($aktifPenyewa ?? 0) > 0 ? 'up' : 'down' }}"></i>
+                                {{ (($totalRooms ?? 0) > 0 ? round((($aktifPenyewa ?? 0) / ($totalRooms ?? 1)) * 100) : 0) }}%
                             </div>
                         </div>
-                        <div class="stat-value">8</div>
+                        <div class="stat-value">{{ $aktifPenyewa ?? 8 }}</div>
                         <div class="stat-label">Penyewa Aktif</div>
                         <div class="stat-footer">
                             <i class="bi bi-check-circle"></i>
-                            <span>Kapasitas optimal</span>
+                            <span>{{ $menunggakPenyewa ?? 1 }} menunggak</span>
                         </div>
                     </div>
                     
@@ -879,14 +916,14 @@
                             </div>
                             <div class="stat-trend trend-up">
                                 <i class="bi bi-arrow-up"></i>
-                                15%
+                                {{ number_format(($monthlyRevenue ?? 8400000) / 1000000, 1) }} JT
                             </div>
                         </div>
-                        <div class="stat-value">Rp 8.4 JT</div>
+                        <div class="stat-value">Rp {{ number_format(($monthlyRevenue ?? 8400000) / 1000000, 1) }} JT</div>
                         <div class="stat-label">Pendapatan Bulan Ini</div>
                         <div class="stat-footer">
                             <i class="bi bi-graph-up"></i>
-                            <span>Naik dari bulan lalu</span>
+                            <span>Total tahun ini: Rp {{ number_format(($yearlyRevenue ?? 50000000) / 1000000, 1) }} JT</span>
                         </div>
                     </div>
                     
@@ -895,16 +932,16 @@
                             <div class="stat-icon icon-kosong">
                                 <i class="bi bi-house-x"></i>
                             </div>
-                            <div class="stat-trend trend-down">
+                            <div class="stat-trend {{ ($vacantRooms ?? 0) > 0 ? 'trend-down' : 'trend-up' }}">
                                 <i class="bi bi-exclamation-triangle"></i>
-                                Perhatian
+                                {{ ($vacantRooms ?? 0) > 0 ? 'Perhatian' : 'Optimal' }}
                             </div>
                         </div>
-                        <div class="stat-value">4</div>
+                        <div class="stat-value">{{ $vacantRooms ?? 4 }}</div>
                         <div class="stat-label">Kamar Kosong</div>
                         <div class="stat-footer">
                             <i class="bi bi-clock"></i>
-                            <span>Butuh perhatian</span>
+                            <span>{{ $maintenanceRooms ?? 0 }} dalam maintenance</span>
                         </div>
                     </div>
                 </div>
@@ -931,7 +968,7 @@
                     <div class="chart-card fade-in">
                         <div class="chart-header">
                             <h5><i class="bi bi-pie-chart"></i> Status Kamar</h5>
-                            <div class="text-muted">Total: 12 Kamar</div>
+                            <div class="text-muted">Total: {{ $totalRooms ?? 12 }} Kamar</div>
                         </div>
                         <canvas id="roomStatusChart" height="250"></canvas>
                     </div>
@@ -941,76 +978,86 @@
                 <div class="activity-card fade-in">
                     <div class="activity-header">
                         <h5><i class="bi bi-clock-history"></i> Aktivitas Terbaru</h5>
-                        <a href="#" class="btn btn-sm btn-outline-primary">
+                        <a href="{{ route('payments.index') }}" class="btn btn-sm btn-outline-primary">
                             Lihat Semua <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
                     <div class="activity-list">
-                        <div class="activity-item">
-                            <div class="activity-icon icon-payment">
-                                <i class="bi bi-cash"></i>
-                            </div>
-                            <div class="activity-content">
-                                <h6 class="mb-1">Pembayaran diterima</h6>
-                                <p class="mb-0 text-muted">Budi Santoso membayar kamar A1 untuk bulan November</p>
-                                <small class="text-muted">
-                                    <i class="bi bi-clock"></i>
-                                    2 jam yang lalu
-                                </small>
-                            </div>
-                            <span class="activity-badge badge-success">Rp 1.200.000</span>
-                        </div>
+                        @php
+                            $recentActivities = $recentActivities ?? [
+                                [
+                                    'type' => 'payment',
+                                    'title' => 'Pembayaran diterima',
+                                    'description' => 'Budi Santoso membayar kamar A1 untuk bulan November',
+                                    'amount' => 1200000,
+                                    'status' => 'lunas',
+                                    'time' => '2 jam yang lalu',
+                                    'icon' => 'cash'
+                                ],
+                                [
+                                    'type' => 'warning',
+                                    'title' => 'Pembayaran terlambat',
+                                    'description' => 'Siti Rahayu belum membayar kamar B3 (jatuh tempo 5 Nov)',
+                                    'status' => 'tertunda',
+                                    'time' => '1 hari yang lalu',
+                                    'icon' => 'exclamation-triangle'
+                                ],
+                                [
+                                    'type' => 'new_tenant',
+                                    'title' => 'Penyewa baru',
+                                    'description' => 'Rina Melati mendaftar sebagai penyewa kamar C2',
+                                    'time' => '3 hari yang lalu',
+                                    'icon' => 'person-plus'
+                                ],
+                                [
+                                    'type' => 'maintenance',
+                                    'title' => 'Maintenance selesai',
+                                    'description' => 'Perbaikan AC di kamar A3 telah selesai dilakukan',
+                                    'time' => '1 minggu yang lalu',
+                                    'icon' => 'tools'
+                                ]
+                            ];
+                        @endphp
                         
-                        <div class="activity-item">
-                            <div class="activity-icon icon-warning">
-                                <i class="bi bi-exclamation-triangle"></i>
+                        @foreach($recentActivities as $activity)
+                            <div class="activity-item">
+                                <div class="activity-icon 
+                                    @if($activity['type'] == 'payment' || ($activity['status'] ?? '') == 'lunas') icon-payment
+                                    @elseif($activity['type'] == 'warning' || ($activity['status'] ?? '') == 'tertunda') icon-warning
+                                    @elseif($activity['type'] == 'new_tenant') icon-new
+                                    @else icon-maintenance
+                                    @endif">
+                                    <i class="bi bi-{{ $activity['icon'] ?? 'info-circle' }}"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <h6 class="mb-1">{{ $activity['title'] ?? 'Aktivitas' }}</h6>
+                                    <p class="mb-0 text-muted">{{ $activity['description'] ?? 'Deskripsi aktivitas' }}</p>
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i>
+                                        {{ $activity['time'] ?? 'Baru saja' }}
+                                    </small>
+                                </div>
+                                @if(isset($activity['amount']))
+                                    <span class="activity-badge badge-success">
+                                        Rp {{ number_format($activity['amount'], 0, ',', '.') }}
+                                    </span>
+                                @elseif(isset($activity['status']) && $activity['status'] == 'tertunda')
+                                    <span class="activity-badge badge-warning">
+                                        Tertunda
+                                    </span>
+                                @else
+                                    <span class="activity-badge badge-info">
+                                        {{ $activity['type'] == 'new_tenant' ? 'Baru' : 'Selesai' }}
+                                    </span>
+                                @endif
                             </div>
-                            <div class="activity-content">
-                                <h6 class="mb-1">Pembayaran terlambat</h6>
-                                <p class="mb-0 text-muted">Siti Rahayu belum membayar kamar B3 (jatuh tempo 5 Nov)</p>
-                                <small class="text-muted">
-                                    <i class="bi bi-clock"></i>
-                                    1 hari yang lalu
-                                </small>
-                            </div>
-                            <span class="activity-badge badge-warning">Tertunda</span>
-                        </div>
-                        
-                        <div class="activity-item">
-                            <div class="activity-icon icon-new">
-                                <i class="bi bi-person-plus"></i>
-                            </div>
-                            <div class="activity-content">
-                                <h6 class="mb-1">Penyewa baru</h6>
-                                <p class="mb-0 text-muted">Rina Melati mendaftar sebagai penyewa kamar C2</p>
-                                <small class="text-muted">
-                                    <i class="bi bi-clock"></i>
-                                    3 hari yang lalu
-                                </small>
-                            </div>
-                            <span class="activity-badge badge-info">Baru</span>
-                        </div>
-                        
-                        <div class="activity-item">
-                            <div class="activity-icon icon-maintenance">
-                                <i class="bi bi-tools"></i>
-                            </div>
-                            <div class="activity-content">
-                                <h6 class="mb-1">Maintenance selesai</h6>
-                                <p class="mb-0 text-muted">Perbaikan AC di kamar A3 telah selesai dilakukan</p>
-                                <small class="text-muted">
-                                    <i class="bi bi-clock"></i>
-                                    1 minggu yang lalu
-                                </small>
-                            </div>
-                            <span class="activity-badge badge-info">Selesai</span>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
                 
                 <!-- Quick Actions -->
                 <div class="quick-actions">
-                    <div class="action-card fade-in">
+                    <div class="action-card fade-in" onclick="window.location.href='{{ route('penyewas.create') }}'">
                         <div class="action-icon">
                             <i class="bi bi-plus-circle"></i>
                         </div>
@@ -1018,7 +1065,7 @@
                         <p>Tambah penyewa baru ke sistem</p>
                     </div>
                     
-                    <div class="action-card fade-in" style="animation-delay: 0.1s;">
+                    <div class="action-card fade-in" style="animation-delay: 0.1s;" onclick="window.location.href='{{ route('payments.create') }}'">
                         <div class="action-icon">
                             <i class="bi bi-cash-stack"></i>
                         </div>
@@ -1026,15 +1073,15 @@
                         <p>Catat pembayaran dari penyewa</p>
                     </div>
                     
-                    <div class="action-card fade-in" style="animation-delay: 0.2s;">
+                    <div class="action-card fade-in" style="animation-delay: 0.2s;" onclick="window.location.href='{{ route('rooms.create') }}'">
                         <div class="action-icon">
-                            <i class="bi bi-file-earmark-text"></i>
+                            <i class="bi bi-plus-square"></i>
                         </div>
-                        <h6>Generate Laporan</h6>
-                        <p>Buat laporan bulanan</p>
+                        <h6>Tambah Kamar</h6>
+                        <p>Tambah kamar baru ke sistem</p>
                     </div>
                     
-                    <div class="action-card fade-in" style="animation-delay: 0.3s;">
+                    <div class="action-card fade-in" style="animation-delay: 0.3s;" onclick="window.location.href='#'">
                         <div class="action-icon">
                             <i class="bi bi-gear"></i>
                         </div>
@@ -1059,15 +1106,23 @@
             document.getElementById('sidebar').classList.toggle('active');
         });
         
+        // Data untuk charts dari PHP
+        <?php
+            $revenueLabels = isset($revenueData['labels']) ? json_encode($revenueData['labels']) : json_encode(['Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt']);
+            $revenueValues = isset($revenueData['data']) ? json_encode($revenueData['data']) : json_encode([7.2, 7.5, 8.0, 7.8, 8.2, 8.4]);
+        ?>
+        const revenueLabels = <?php echo $revenueLabels; ?>;
+        const revenueValues = <?php echo $revenueValues; ?>;
+        
         // Revenue Chart
         const revenueCtx = document.getElementById('revenueChart').getContext('2d');
         const revenueChart = new Chart(revenueCtx, {
             type: 'line',
             data: {
-                labels: ['Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt'],
+                labels: revenueLabels,
                 datasets: [{
                     label: 'Pendapatan (Juta)',
-                    data: [7.2, 7.5, 8.0, 7.8, 8.2, 8.4],
+                    data: revenueValues,
                     borderColor: '#667EEA',
                     backgroundColor: 'rgba(102, 126, 234, 0.1)',
                     borderWidth: 3,
@@ -1113,7 +1168,7 @@
                         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07)',
                         callbacks: {
                             label: function(context) {
-                                return `Rp ${context.parsed.y} JT`;
+                                return `Rp ${context.parsed.y.toFixed(1)} JT`;
                             }
                         }
                     }
@@ -1127,7 +1182,7 @@
                         },
                         ticks: {
                             callback: function(value) {
-                                return 'Rp ' + value + 'JT';
+                                return 'Rp ' + value.toFixed(1) + 'JT';
                             },
                             font: {
                                 size: 12
@@ -1151,6 +1206,11 @@
             }
         });
         
+        // Data untuk room status chart
+        const occupiedRooms = <?php echo $occupiedRooms ?? 8; ?>;
+        const vacantRooms = <?php echo $vacantRooms ?? 4; ?>;
+        const maintenanceRooms = <?php echo $maintenanceRooms ?? 0; ?>;
+        
         // Room Status Chart
         const roomCtx = document.getElementById('roomStatusChart').getContext('2d');
         const roomChart = new Chart(roomCtx, {
@@ -1158,7 +1218,7 @@
             data: {
                 labels: ['Terisi', 'Kosong', 'Maintenance'],
                 datasets: [{
-                    data: [8, 3, 1],
+                    data: [occupiedRooms, vacantRooms, maintenanceRooms],
                     backgroundColor: [
                         '#10B981',
                         '#EF4444',

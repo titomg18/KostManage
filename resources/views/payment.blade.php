@@ -831,7 +831,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="{{ route('laporan.index') }}" class="nav-link">
                         <i class="bi bi-file-earmark-text"></i>
                         <span>Laporan</span>
                     </a>
